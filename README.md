@@ -3,10 +3,15 @@
 ![다운로드](https://user-images.githubusercontent.com/24809457/81882325-6f845800-95cd-11ea-87f4-fbe30f95d71e.jpg)
 
 background : 640 * 480  
+
 stage : 640 * 50  
+
 character : 33 * 60  
+
 weapon : 20 * 430  
+
 ball : 160 * 160, 80 * 80, 40 * 40, 20 * 20  
+
 
 ##조건
     * character가 화면 아래 stage위에 존재하며, 좌우로만 이동 가능
