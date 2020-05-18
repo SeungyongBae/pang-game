@@ -9,6 +9,7 @@
 * ball : 160 * 160, 80 * 80, 40 * 40, 20 * 20  
 
 
+
 ## 조건
 * character가 화면 아래 stage위에 존재하며, 좌우로만 이동 가능
 * Space bar를 눌러 weapon 발사

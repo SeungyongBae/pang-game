@@ -72,10 +72,17 @@ balls.append({
     "init_speed_y" : ball_speed_y[0]
 })
 
+# 사라질 무기와 공 저장 변수
+weapon_to_remove = -1
+ball_to_remove = -1
+
+# font
+game_font = pygame.font.Font(None, 40)
 
 #####################################################################################
 # event loop
 running = True  
+game_over = False
 while running:
     dt = clock.tick(60) # set FPS
 
@@ -140,7 +147,49 @@ while running:
 
     #####################################################################################
     # 5. collision
-   
+
+    # character rect update
+    character_rect = character.get_rect()
+    character_rect.left = character_xpos
+    character_rect.top = character_ypos
+
+    for ball_idx, ball_val in enumerate(balls):
+        ball_xpos = ball_val["pos_x"]
+        ball_ypos = ball_val["pos_y"]
+        ball_img_idx = ball_val["img_idx"]
+        # ball rect update
+        ball_rect = ball_images[ball_img_idx].get_rect()
+        ball_rect.left = ball_xpos
+        ball_rect.top = ball_ypos
+        
+        # collision between character and ball
+        if character_rect.colliderect(ball_rect):
+            running = False
+            game_over = True
+            break
+
+        for weapon_idx, weapon_val in enumerate(weapons):
+            weapon_xpos = weapon_val[0]
+            weapon_ypos = weapon_val[1]
+            # weapon rect update
+            weapon_rect = weapon.get_rect()
+            weapon_rect.left = weapon_xpos
+            weapon_rect.top = weapon_ypos
+
+            # collision between ball and weapons
+            if weapon_rect.colliderect(ball_rect):
+                weapon_to_remove = weapon_idx
+                ball_to_remove = ball_img_idx
+                break
+    
+    if ball_to_remove > -1:
+        del balls[ball_to_remove]
+        ball_to_remove = -1
+    if weapon_to_remove > -1:
+        del weapons[weapon_to_remove]
+        weapon_to_remove = -1
+
+
     #####################################################################################
     # 6. timer
 
@@ -159,6 +208,8 @@ while running:
     screen.blit(stage, (0, screen_height-stage_height))
     screen.blit(character, (character_xpos, character_ypos))
 
+    if game_over:
+        screen.blit(game_font.render("Game Over", True, (0,0,0)), (screen_width/2-70, 100))
 
     pygame.display.update() # display update
 
