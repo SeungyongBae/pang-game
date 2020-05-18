@@ -51,6 +51,27 @@ weapons = []
 # weapon speed
 weapon_speed = 10
 
+# ball
+ball_images = [
+    pygame.image.load(os.path.join(asset_path, "ball1.png")),
+    pygame.image.load(os.path.join(asset_path, "ball2.png")),
+    pygame.image.load(os.path.join(asset_path, "ball3.png")),
+    pygame.image.load(os.path.join(asset_path, "ball4.png"))
+]
+# 공 크기에 따른 속력
+ball_speed_y = [-14, -11, -8 -5]
+
+balls = []
+
+balls.append({
+    "pos_x" : 50,   # 초기 위치
+    "pos_y" : 50,
+    "img_idx" : 0,
+    "to_x" : 3,     # 초기 이동 속도
+    "to_y" : -6,
+    "init_speed_y" : ball_speed_y[0]
+})
+
 
 #####################################################################################
 # event loop
@@ -90,10 +111,32 @@ while running:
     elif character_xpos > screen_width-character_width:
         character_xpos = screen_width-character_width
    
-    # weapon move
+    # weapon move ***
     weapons = [ [w[0], w[1]-weapon_speed] for w in weapons ]
-
     weapons = [ [w[0], w[1]] for w in weapons if w[1] > 0]
+
+    # ball move
+    for ball_idx, ball_val in enumerate(balls):
+        ball_xpos = ball_val["pos_x"]
+        ball_ypos = ball_val["pos_y"]
+        ball_img_idx = ball_val["img_idx"]
+
+        ball_size = ball_images[ball_img_idx].get_rect().size
+        ball_width = ball_size[0]
+        ball_height = ball_size[1]
+
+        # set ball boundary X
+        if ball_xpos < 0 or ball_xpos > screen_width-ball_width:
+            ball_val["to_x"] = ball_val["to_x"] * -1
+
+        # set ball boundary Y
+        if ball_ypos >= screen_height-stage_height-ball_height: # bouncing at stage first
+            ball_val["to_y"] = ball_val["init_speed_y"]
+        else:   # speed down
+            ball_val["to_y"] += 0.4
+
+        ball_val["pos_x"] += ball_val["to_x"]
+        ball_val["pos_y"] += ball_val["to_y"]
 
     #####################################################################################
     # 5. collision
@@ -107,6 +150,12 @@ while running:
     screen.blit(background,(0, 0))
     for weapon_xpos, weapon_ypos in weapons:
         screen.blit(weapon, (weapon_xpos, weapon_ypos))
+    for idx, val in enumerate(balls):
+        ball_xpos = val["pos_x"]
+        ball_ypos = val["pos_y"]
+        ball_img_idx = val["img_idx"] 
+        screen.blit(ball_images[ball_img_idx], (ball_xpos, ball_ypos))
+
     screen.blit(stage, (0, screen_height-stage_height))
     screen.blit(character, (character_xpos, character_ypos))
 
