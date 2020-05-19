@@ -42,6 +42,7 @@ character_ypos = screen_height - stage_height - character_height
 character_to_x = 0  # 캐릭터 이동 속도
 character_speed = 7 # 캐릭터 이동 속력
 
+
 # weapon
 weapon = pygame.image.load(os.path.join(asset_path, "weapon.png"))
 weapon_size = weapon.get_rect().size
@@ -84,6 +85,8 @@ start_tick = pygame.time.get_ticks()
 
 game_result = ""
 
+left_pressed = False    # 버그 해결 : 키 중복 입력 시 캐릭터 이동 제한
+right_pressed = False
 #####################################################################################
 # event loop
 running = True  
@@ -96,20 +99,32 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):    # quit game
             running = False
-
+        
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                character_to_x -= character_speed
+                left_pressed = True
             elif event.key == pygame.K_RIGHT:
-                character_to_x += character_speed
+                right_pressed = True
             elif event.key == pygame.K_SPACE:
                 weapon_xpos = character_xpos + character_width/2 - weapon_width/2
                 weapon_ypos = character_ypos
                 weapons.append([weapon_xpos, weapon_ypos])
         
         if event.type == pygame.KEYUP:
-            if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
+            if event.key == pygame.K_LEFT:
+                left_pressed = False
                 character_to_x = 0
+            elif event.key == pygame.K_RIGHT:
+                right_pressed = False
+                character_to_x = 0
+
+        if left_pressed and right_pressed:
+            character_to_x = 0
+        else:
+            if left_pressed:
+                character_to_x = 0 - character_speed
+            if right_pressed:
+                character_to_x = 0 + character_speed
 
 
     #####################################################################################
@@ -149,7 +164,7 @@ while running:
 
         ball_val["pos_x"] += ball_val["to_x"]
         ball_val["pos_y"] += ball_val["to_y"]
-
+        # bug fix: 캐릭터의 이동이 원활하지 않는 버그 수정
     #####################################################################################
     # 5. collision
 
@@ -157,6 +172,7 @@ while running:
     character_rect = character.get_rect()
     character_rect.left = character_xpos
     character_rect.top = character_ypos
+
 
     for ball_idx, ball_val in enumerate(balls):
         ball_xpos = ball_val["pos_x"]
@@ -166,7 +182,8 @@ while running:
         ball_rect = ball_images[ball_img_idx].get_rect()
         ball_rect.left = ball_xpos
         ball_rect.top = ball_ypos
-        
+
+
         # collision between character and ball
         if character_rect.colliderect(ball_rect):
             running = False
@@ -215,6 +232,10 @@ while running:
                     })
 
                 break
+        else:           
+            continue
+        break
+    ###################### bug fix: 중첩 for일 경우 의도한 대로 break를 실행 (중첩 for문 동시 탈출)
     
     if ball_to_remove > -1:
         del balls[ball_to_remove]
@@ -256,10 +277,10 @@ while running:
 
 
 # quit
-msg = game_font.render(game_result, True, (255,255,255))
+msg = game_font.render(game_result, True, (0,0,0))
 msg_rect = msg.get_rect(center=(int(screen_width/2), int(screen_height/2)))
 screen.blit(msg, msg_rect)
 pygame.display.update()
 
 pygame.time.delay(1000)
-pygame.quit()
+pygame.quit()   
