@@ -40,7 +40,7 @@ character_xpos = screen_width/2 - character_width/2 # 캐릭터 실제 위치
 character_ypos = screen_height - stage_height - character_height
 # character move
 character_to_x = 0  # 캐릭터 이동 속도
-character_speed = 5 # 캐릭터 이동 속력
+character_speed = 7 # 캐릭터 이동 속력
 
 # weapon
 weapon = pygame.image.load(os.path.join(asset_path, "weapon.png"))
@@ -59,7 +59,7 @@ ball_images = [
     pygame.image.load(os.path.join(asset_path, "ball4.png"))
 ]
 # 공 크기에 따른 속력
-ball_speed_y = [-14, -11, -8 -5]
+ball_speed_y = [-19, -16, -13, -10]
 
 balls = []
 
@@ -76,15 +76,20 @@ balls.append({
 weapon_to_remove = -1
 ball_to_remove = -1
 
-# font
+# text
 game_font = pygame.font.Font(None, 40)
+
+total_time = 60
+start_tick = pygame.time.get_ticks()
+
+game_result = ""
 
 #####################################################################################
 # event loop
 running = True  
-game_over = False
+
 while running:
-    dt = clock.tick(60) # set FPS
+    dt = clock.tick(30) # set FPS
 
     #####################################################################################
     # 3. event(keyboard, mouse)
@@ -140,7 +145,7 @@ while running:
         if ball_ypos >= screen_height-stage_height-ball_height: # bouncing at stage first
             ball_val["to_y"] = ball_val["init_speed_y"]
         else:   # speed down
-            ball_val["to_y"] += 0.4
+            ball_val["to_y"] += 0.6
 
         ball_val["pos_x"] += ball_val["to_x"]
         ball_val["pos_y"] += ball_val["to_y"]
@@ -165,7 +170,7 @@ while running:
         # collision between character and ball
         if character_rect.colliderect(ball_rect):
             running = False
-            game_over = True
+            game_result = "Game Over"
             break
 
         for weapon_idx, weapon_val in enumerate(weapons):
@@ -179,7 +184,36 @@ while running:
             # collision between ball and weapons
             if weapon_rect.colliderect(ball_rect):
                 weapon_to_remove = weapon_idx
-                ball_to_remove = ball_img_idx
+                ball_to_remove = ball_idx
+
+                if ball_img_idx < 3:    # 공 나누기
+
+                    ball_width = ball_rect.size[0]
+                    ball_height = ball_rect.size[1]
+
+                    small_ball_rect = ball_images[ball_img_idx + 1].get_rect()
+                    small_ball_width = small_ball_rect.size[0]
+                    small_ball_height = small_ball_rect.size[1]
+
+                    # left
+                    balls.append({
+                        "pos_x" : ball_xpos + ball_width/2 - small_ball_width/2,   
+                        "pos_y" : ball_ypos + ball_height/2 - small_ball_height/2,
+                        "img_idx" : ball_img_idx+1,
+                        "to_x" : -3,     
+                        "to_y" : -6,
+                        "init_speed_y" : ball_speed_y[ball_img_idx+1]
+                    })
+                    # right
+                    balls.append({
+                        "pos_x" : ball_xpos + ball_width/2 - small_ball_width/2,   
+                        "pos_y" : ball_ypos + ball_height/2 - small_ball_height/2,
+                        "img_idx" : ball_img_idx+1,
+                        "to_x" : 3,     
+                        "to_y" : -6,
+                        "init_speed_y" : ball_speed_y[ball_img_idx+1]
+                    })
+
                 break
     
     if ball_to_remove > -1:
@@ -189,10 +223,10 @@ while running:
         del weapons[weapon_to_remove]
         weapon_to_remove = -1
 
-
-    #####################################################################################
-    # 6. timer
-
+    if len(balls) == 0:
+        game_result = "Stage Clear"
+        running = False
+        
     #####################################################################################
     # 7. draw in screen
 
@@ -208,12 +242,24 @@ while running:
     screen.blit(stage, (0, screen_height-stage_height))
     screen.blit(character, (character_xpos, character_ypos))
 
-    if game_over:
-        screen.blit(game_font.render("Game Over", True, (0,0,0)), (screen_width/2-70, 100))
+    elapsed_time = (pygame.time.get_ticks() - start_tick) / 1000
+    timer = game_font.render("Time : {}".format(int(total_time - elapsed_time)), True, (255,255,255))
+    screen.blit(timer, (10, 10))
+
+
+    if total_time - elapsed_time <= 0:
+        game_result = "Time Out"
+        running = False
+
 
     pygame.display.update() # display update
 
 
 # quit
+msg = game_font.render(game_result, True, (255,255,255))
+msg_rect = msg.get_rect(center=(int(screen_width/2), int(screen_height/2)))
+screen.blit(msg, msg_rect)
+pygame.display.update()
+
 pygame.time.delay(1000)
 pygame.quit()
