@@ -31,9 +31,11 @@ stage = pygame.image.load(os.path.join(asset_path, "stage.png"))
 stage_size = stage.get_rect().size
 stage_height = stage_size[1]
 
+
 # character
-character = pygame.image.load(os.path.join(asset_path, "character.png"))
-character_size = character.get_rect().size
+character = pygame.sprite.Sprite()
+character.image = pygame.image.load(os.path.join(asset_path, "character.png")).convert_alpha()
+character_size = character.image.get_rect().size
 character_width = character_size[0]
 character_height = character_size[1]
 character_xpos = screen_width/2 - character_width/2 # 캐릭터 실제 위치
@@ -44,8 +46,9 @@ character_speed = 7 # 캐릭터 이동 속력
 
 
 # weapon
-weapon = pygame.image.load(os.path.join(asset_path, "weapon.png"))
-weapon_size = weapon.get_rect().size
+weapon = pygame.sprite.Sprite()
+weapon.image = pygame.image.load(os.path.join(asset_path, "weapon.png")).convert_alpha()
+weapon_size = weapon.image.get_rect().size
 weapon_width = weapon_size[0]
 # 무기는 여러번 발사 가능
 weapons = []
@@ -53,11 +56,13 @@ weapons = []
 weapon_speed = 10
 
 # ball
+ball = pygame.sprite.Sprite()
+
 ball_images = [
-    pygame.image.load(os.path.join(asset_path, "ball1.png")),
-    pygame.image.load(os.path.join(asset_path, "ball2.png")),
-    pygame.image.load(os.path.join(asset_path, "ball3.png")),
-    pygame.image.load(os.path.join(asset_path, "ball4.png"))
+    pygame.image.load(os.path.join(asset_path, "ball1.png")).convert_alpha(),
+    pygame.image.load(os.path.join(asset_path, "ball2.png")).convert_alpha(),
+    pygame.image.load(os.path.join(asset_path, "ball3.png")).convert_alpha(),
+    pygame.image.load(os.path.join(asset_path, "ball4.png")).convert_alpha()
 ]
 # 공 크기에 따른 속력
 ball_speed_y = [-19, -16, -13, -10]
@@ -164,14 +169,15 @@ while running:
 
         ball_val["pos_x"] += ball_val["to_x"]
         ball_val["pos_y"] += ball_val["to_y"]
-        # bug fix: 캐릭터의 이동이 원활하지 않는 버그 수정
+            # bug fix: 캐릭터의 이동이 원활하지 않는 버그 수정
     #####################################################################################
     # 5. collision
 
     # character rect update
-    character_rect = character.get_rect()
-    character_rect.left = character_xpos
-    character_rect.top = character_ypos
+    character.rect = character.image.get_rect()
+    character.rect.left = character_xpos
+    character.rect.top = character_ypos
+    character.mask = pygame.mask.from_surface(character.image)
 
 
     for ball_idx, ball_val in enumerate(balls):
@@ -179,13 +185,14 @@ while running:
         ball_ypos = ball_val["pos_y"]
         ball_img_idx = ball_val["img_idx"]
         # ball rect update
-        ball_rect = ball_images[ball_img_idx].get_rect()
-        ball_rect.left = ball_xpos
-        ball_rect.top = ball_ypos
+        ball.rect = ball_images[ball_img_idx].get_rect()
+        ball.rect.left = ball_xpos
+        ball.rect.top = ball_ypos
+        ball.mask = pygame.mask.from_surface(ball_images[ball_img_idx])
 
 
         # collision between character and ball
-        if character_rect.colliderect(ball_rect):
+        if(pygame.sprite.collide_mask(character, ball)):
             running = False
             game_result = "Game Over"
             break
@@ -194,19 +201,19 @@ while running:
             weapon_xpos = weapon_val[0]
             weapon_ypos = weapon_val[1]
             # weapon rect update
-            weapon_rect = weapon.get_rect()
-            weapon_rect.left = weapon_xpos
-            weapon_rect.top = weapon_ypos
+            weapon.rect = weapon.image.get_rect()
+            weapon.rect.left = weapon_xpos
+            weapon.rect.top = weapon_ypos
 
             # collision between ball and weapons
-            if weapon_rect.colliderect(ball_rect):
+            if(pygame.sprite.collide_mask(weapon, ball)):
                 weapon_to_remove = weapon_idx
                 ball_to_remove = ball_idx
 
                 if ball_img_idx < 3:    # 공 나누기
 
-                    ball_width = ball_rect.size[0]
-                    ball_height = ball_rect.size[1]
+                    ball_width = ball.rect.size[0]
+                    ball_height = ball.rect.size[1]
 
                     small_ball_rect = ball_images[ball_img_idx + 1].get_rect()
                     small_ball_width = small_ball_rect.size[0]
@@ -253,7 +260,7 @@ while running:
 
     screen.blit(background,(0, 0))
     for weapon_xpos, weapon_ypos in weapons:
-        screen.blit(weapon, (weapon_xpos, weapon_ypos))
+        screen.blit(weapon.image, (weapon_xpos, weapon_ypos))
     for idx, val in enumerate(balls):
         ball_xpos = val["pos_x"]
         ball_ypos = val["pos_y"]
@@ -261,7 +268,7 @@ while running:
         screen.blit(ball_images[ball_img_idx], (ball_xpos, ball_ypos))
 
     screen.blit(stage, (0, screen_height-stage_height))
-    screen.blit(character, (character_xpos, character_ypos))
+    screen.blit(character.image, (character_xpos, character_ypos))
 
     elapsed_time = (pygame.time.get_ticks() - start_tick) / 1000
     timer = game_font.render("Time : {}".format(int(total_time - elapsed_time)), True, (255,255,255))
